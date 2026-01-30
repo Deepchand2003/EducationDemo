@@ -261,3 +261,131 @@ function initContactForm() {
     });
   }
 }
+
+function initProgressBars() {
+  const progressBars = document.querySelectorAll('.progress-fill');
+  if (progressBars.length === 0) return;
+  const options = {
+    threshold: 0.5
+  };
+}
+
+function initGalleryLightbox() {
+  const galleryItems = document.querySelectorAll('.gallery-item');
+  galleryItems.forEach(item => {
+    item.addEventListener('click', function() {
+      const img = this.querySelector('img');
+      if (img) {
+        // Create lightbox
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        lightbox.innerHTML = `
+          <div class="lightbox-content">
+            <button class="lightbox-close" aria-label="Close">&times;</button>
+            <img src="${img.src}" alt="${img.alt}">
+            <p class="lightbox-caption">${img.alt}</p>
+          </div>
+        `;
+        // Add styles
+        lightbox.style.cssText = `
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
+          animation: fadeIn 0.3s ease;
+        `;
+        const content = lightbox.querySelector('.lightbox-content');
+        content.style.cssText = `
+          position: relative;
+          max-width: 90vw;
+          max-height: 90vh;
+          text-align: center;
+        `;
+        const lightboxImg = lightbox.querySelector('img');
+        lightboxImg.style.cssText = `
+          max-width: 100%;
+          max-height: 80vh;
+          border-radius: 8px;
+        `;
+        const closeBtn = lightbox.querySelector('.lightbox-close');
+        closeBtn.style.cssText = `
+          position: absolute;
+          top: -40px;
+          right: 0;
+          background: none;
+          border: none;
+          color: white;
+          font-size: 2rem;
+          cursor: pointer;
+        `;
+        const caption = lightbox.querySelector('.lightbox-caption');
+        caption.style.cssText = `
+          color: white;
+          margin-top: 1rem;
+          font-size: 1rem;
+        `;
+        document.body.appendChild(lightbox);
+        document.body.style.overflow = 'hidden';
+        // Close handlers
+        closeBtn.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', function(e) {
+          if (e.target === lightbox) closeLightbox();
+        });
+        function closeLightbox() {
+          lightbox.remove();
+          document.body.style.overflow = '';
+        }
+        // ESC key to close
+        document.addEventListener('keydown', function escHandler(e) {
+          if (e.key === 'Escape') {
+            closeLightbox();
+            document.removeEventListener('keydown', escHandler);
+          }
+        });
+      }
+    });
+  });
+}
+
+function initAlumniForm() {
+  const form = document.getElementById('alumniForm');
+  if (form) {
+    // Generate graduation year options dynamically
+    const yearSelect = document.getElementById('graduationYear');
+    if (yearSelect && yearSelect.options.length <= 1) {
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear; year >= 1974; year--) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      }
+    }
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Collect form data
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      // Collect checkbox values
+      const interests = [];
+      form.querySelectorAll('input[name="interests"]:checked').forEach(cb => {
+        interests.push(cb.value);
+      });
+      data.interests = interests;
+      // Here you would typically send the data to your server
+      console.log('Alumni form submitted:', data);
+      // Track form submission for Salesforce MCP
+      trackEvent('form_submit', {
+        form_type: 'alumni_registration',
+        graduation_year: data.graduationYear,
+        program: data.program
+      });
+      // Show success message
+      alert('Thank you for registering! You will receive a confirmation email shortly.');
+      form.reset();
+    });
+  }
+}
